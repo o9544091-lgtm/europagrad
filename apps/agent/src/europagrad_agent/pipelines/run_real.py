@@ -90,6 +90,7 @@ async def execute_real_run(
     extractor_kind: str = "auto",
     university_limit: int | None = None,
     candidate_limit: int = 8,
+    job_id: str | None = None,
 ) -> dict:
     settings = get_settings()
     if not settings.supabase_url or not settings.supabase_service_key:
@@ -112,7 +113,7 @@ async def execute_real_run(
     store = _CombinedStore()
 
     try:
-        job = JobProgress(countries, depth_level)
+        job = JobProgress(countries, depth_level, job_id=job_id)
     except RuntimeError:
         job = MemoryJobProgress(countries, depth_level)
 

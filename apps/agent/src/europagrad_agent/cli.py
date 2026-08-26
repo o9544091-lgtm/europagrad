@@ -89,8 +89,9 @@ def cmd_run(args: argparse.Namespace) -> int:
                     countries=codes,
                     depth_level=args.depth,
                     extractor_kind=getattr(args, "extractor", "auto"),
-                    university_limit=getattr(args, "limit", None),
+                    university_limit=(args.limit if getattr(args, "limit", 0) else None),
                     candidate_limit=getattr(args, "candidate_limit", 8),
+                    job_id=getattr(args, "job_id", None) or None,
                 )
             )
             console.print("\n[bold]Run complete[/bold]")
@@ -125,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--extractor", default="auto", choices=["auto", "llm", "heuristic"], help="extraction path (default auto)")
     run.add_argument("--limit", type=int, default=None, help="cap universities processed (per run)")
     run.add_argument("--candidate-limit", type=int, default=8, help="cap candidate pages per university")
+    run.add_argument("--job-id", default=None, help="attach to an existing research_jobs row (set by app trigger)")
     run.set_defaults(func=cmd_run)
 
     args = parser.parse_args(argv)

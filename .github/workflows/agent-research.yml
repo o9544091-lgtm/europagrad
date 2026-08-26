@@ -25,6 +25,10 @@ on:
         description: "Cap universities (empty = all)"
         required: false
         default: ""
+      job_id:
+        description: "Attach to an existing research_jobs row (set by app trigger)"
+        required: false
+        default: ""
   repository_dispatch:
     types: [research-request]
 
@@ -41,12 +45,15 @@ jobs:
       SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
       TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+      JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
       RESEARCH_COUNTRIES: ${{ inputs.countries || github.event.client_payload.countries }}
       RESEARCH_DEPTH: ${{ inputs.depth || github.event.client_payload.depth || 'L2' }}
       RESEARCH_DRY_RUN: ${{ inputs.dry_run || github.event.client_payload.dry_run || 'true' }}
       EXTRACTOR: ${{ inputs.extractor || github.event.client_payload.extractor || 'auto' }}
       LIMIT: ${{ inputs.limit || github.event.client_payload.limit || '' }}
+      JOB_ID: ${{ inputs.job_id || github.event.client_payload.job_id || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -62,8 +69,11 @@ jobs:
           if [ -n "$EXTRACTOR" ] && [ "$EXTRACTOR" != "null" ]; then
             ARGS="$ARGS --extractor $EXTRACTOR"
           fi
-          if [ -n "$LIMIT" ] && [ "$LIMIT" != "null" ] && [ "$LIMIT" != "" ]; then
+          if [ -n "$LIMIT" ] && [ "$LIMIT" != "null" ] && [ "$LIMIT" != "" ] && [ "$LIMIT" != "0" ]; then
             ARGS="$ARGS --limit $LIMIT"
+          fi
+          if [ -n "$JOB_ID" ] && [ "$JOB_ID" != "null" ]; then
+            ARGS="$ARGS --job-id $JOB_ID"
           fi
           if [ "$RESEARCH_DRY_RUN" = "true" ]; then
             ARGS="$ARGS --dry-run"

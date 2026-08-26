@@ -60,18 +60,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "could not queue job" }, { status: 500 });
   }
 
-  const dispatch = await fetch(`https://api.github.com/repos/${githubRepo}/dispatches`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
-      Accept: "application/vnd.github+json",
-      "Content-Type": "application/json",
+  const dispatch = await fetch(
+    `https://api.github.com/repos/${githubRepo}/actions/workflows/agent-research.yml/dispatches`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ref: "main",
+        inputs: {
+          countries: countries.join(","),
+          depth,
+          dry_run: "false",
+          extractor: "auto",
+          limit: "25",
+          job_id: job.id,
+        },
+      }),
     },
-    body: JSON.stringify({
-      event_type: "research-request",
-      client_payload: { countries: countries.join(","), depth, dry_run: false, job_id: job.id },
-    }),
-  });
+  );
   if (!dispatch.ok) {
     await supabase.from("research_jobs").update({ status: "FAILED", error: `dispatch failed: ${dispatch.status}` }).eq("id", job.id);
     return NextResponse.json({ error: `GitHub dispatch failed (${dispatch.status})` }, { status: 502 });
