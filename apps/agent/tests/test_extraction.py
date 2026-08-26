@@ -141,6 +141,31 @@ class TestExtractionService:
         assert cleaned.program.ielts_overall is not None
         assert cleaned.program.tuition_eur_per_year is None
 
+    async def test_custom_gateway_base_url(self) -> None:
+        llm_json = {
+            "program": {
+                "program_name": {"value": "MSc CS", "source_url": "https://uni.edu/msc-cs", "quote": "MSc Computer Science"},
+            },
+            "scholarship": None,
+        }
+        seen_urls: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen_urls.append(str(request.url))
+            return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(llm_json)}}]})
+
+        service = ExtractionService(
+            client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+            model="nemotron-free",
+            base_url="https://opencode.ai/zen/v1",
+        )
+        object.__setattr__(service, "_api_key", "zen-key")
+
+        cleaned, rejected = await service.extract("https://uni.edu/msc-cs", PAGE)
+        assert seen_urls[0] == "https://opencode.ai/zen/v1/chat/completions"
+        assert cleaned.program.program_name is not None
+        assert rejected == []
+
     async def test_missing_key_raises(self) -> None:
         service = ExtractionService(client=httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200))))
         object.__setattr__(service, "_api_key", "")

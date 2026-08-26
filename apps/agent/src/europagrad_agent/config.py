@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     supabase_service_key: str = ""
     openrouter_api_key: str = ""
     openrouter_model: str = "google/gemini-2.0-flash-001"
+    llm_base_url: str = "https://openrouter.ai/api/v1"
     tavily_api_key: str = ""
     jina_api_key: str = ""
     github_token: str = ""

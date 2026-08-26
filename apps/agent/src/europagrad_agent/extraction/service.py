@@ -1,9 +1,13 @@
-"""LLM extraction service (task 10): OpenRouter chat completions, JSON mode.
+"""LLM extraction service (task 10): OpenAI-compatible chat completions, JSON mode.
+
+Works with any OpenAI-compatible gateway: OpenRouter (default), OpenCode Zen,
+direct provider endpoints — configured via LLM_BASE_URL + OPENROUTER_MODEL +
+OPENROUTER_API_KEY (the key name is historical; any gateway key goes there).
 
 The prompt forces the model to fill CitedValue fields with VERBATIM quotes
-copied from the provided page text. Anything not stated on the page must be
-null. ExtractionValidator then re-verifies every quote against the content —
-fabricated quotes are dropped, so uncited facts can never reach storage.
+copied from the provided page text. ExtractionValidator then re-verifies every
+quote against the content — fabricated quotes are dropped, so uncited facts
+can never reach storage.
 """
 
 from __future__ import annotations
@@ -16,7 +20,7 @@ import httpx
 from europagrad_agent.config import get_settings
 from europagrad_agent.extraction.schemas import ExtractionBundle, ExtractionValidator
 
-OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
+DEFAULT_LLM_BASE_URL = "https://openrouter.ai/api/v1"
 
 SYSTEM_PROMPT = """You are a precise data-extraction engine for university admissions research.
 You receive the text of one official web page and must extract structured facts.
@@ -31,12 +35,18 @@ STRICT RULES:
 
 
 class ExtractionService:
-    name = "OPENROUTER"
+    name = "LLM"
 
-    def __init__(self, client: httpx.AsyncClient | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        client: httpx.AsyncClient | None = None,
+        model: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
         settings = get_settings()
         self._api_key = settings.openrouter_api_key
         self._model = model or settings.openrouter_model
+        self._base_url = (base_url or settings.llm_base_url or DEFAULT_LLM_BASE_URL).rstrip("/")
         self._client = client or httpx.AsyncClient(timeout=90.0)
 
     async def extract(self, url: str, page_text: str, target: str = "program") -> tuple[ExtractionBundle, list[str]]:
@@ -64,7 +74,7 @@ class ExtractionService:
         )
 
         resp = await self._client.post(
-            OPENROUTER_ENDPOINT,
+            f"{self._base_url}/chat/completions",
             headers={
                 "Authorization": f"Bearer {self._api_key}",
                 "Content-Type": "application/json",
@@ -80,9 +90,9 @@ class ExtractionService:
             },
         )
         if resp.status_code == 429:
-            raise RuntimeError("openrouter rate limit exceeded")
+            raise RuntimeError("llm gateway rate limit exceeded")
         if resp.status_code >= 400:
-            raise RuntimeError(f"openrouter error {resp.status_code}: {resp.text[:200]}")
+            raise RuntimeError(f"llm gateway error {resp.status_code}: {resp.text[:200]}")
 
         content: str = resp.json()["choices"][0]["message"]["content"]
         payload = json.loads(content)
