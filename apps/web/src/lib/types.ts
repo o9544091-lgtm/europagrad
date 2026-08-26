@@ -14,7 +14,7 @@ export interface ProgramRow {
   ieltsOverall: number | null; moiAccepted: boolean | 'NOT_SPECIFIED';
   intake: string; deadline: string | null; deadlineStatus: DeadlineStatus; daysRemaining: number | null;
   partTimeWork: PartTimeWork;
-  matchClass: MatchClass; score: number;
+  matchClass: MatchClass | null; score: number | null; // null until matching engine runs (task 17)
   isJointProgram: boolean;
 }
 
