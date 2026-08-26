@@ -24,9 +24,10 @@ from europagrad_agent.storage.universities import UniversityStore
 from europagrad_agent.storage.writer import ProgramWriter
 
 
-def _optional_tiers() -> tuple[object | None, object | None]:
+def _optional_tiers() -> tuple[object | None, object | None, object | None]:
     playwright = None
     crawl4ai_engine = None
+    jina = None
     try:
         import playwright.async_api  # noqa: F401
 
@@ -43,7 +44,13 @@ def _optional_tiers() -> tuple[object | None, object | None]:
         crawl4ai_engine = Crawl4AIEngine()
     except (ImportError, RuntimeError):
         pass
-    return playwright, crawl4ai_engine
+    try:
+        from europagrad_agent.engines.jina_reader import JinaReaderEngine
+
+        jina = JinaReaderEngine()
+    except (ImportError, RuntimeError):
+        pass
+    return playwright, crawl4ai_engine, jina
 
 
 def _build_extractor(kind: str):
@@ -95,8 +102,10 @@ async def execute_real_run(
         stats = MemoryDomainStats()
 
     static = StaticEngine()
-    playwright, crawl4ai = _optional_tiers()
-    router = AdaptiveRouter(static=static, playwright=playwright, crawl4ai=crawl4ai, stats=stats)
+    playwright, crawl4ai, jina = _optional_tiers()
+    router = AdaptiveRouter(
+        static=static, playwright=playwright, crawl4ai=crawl4ai, jina=jina, stats=stats
+    )
     harvester = SitemapHarvester()
     inventory = RorDumpLoader()
     extractor = _build_extractor(extractor_kind)

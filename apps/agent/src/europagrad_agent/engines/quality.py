@@ -9,13 +9,19 @@ MIN_TEXT_DENSITY = 0.02  # visible text bytes / raw html bytes
 
 
 def assess(raw_html: str) -> tuple[int, float, bool]:
-    """Return (text_chars, text_density, looks_like_js_shell)."""
+    """Return (text_chars, text_density, looks_like_js_shell).
+
+    Handles HTML and plain text/markdown (Jina Reader output): if the content
+    does not parse as HTML, it is treated as pure text with full density.
+    """
     if not raw_html:
         return 0, 0.0, True
     try:
         doc = lxml_html.fromstring(raw_html)
     except Exception:
-        return 0, 0.0, True
+        chars = len(raw_html.strip())
+        density = 1.0 if chars else 0.0
+        return chars, density, chars < MIN_TEXT_CHARS
 
     for bad in doc.xpath("//script|//style|//noscript|//template"):
         bad.getparent().remove(bad)

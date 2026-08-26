@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     openrouter_model: str = "google/gemini-2.0-flash-001"
     tavily_api_key: str = ""
+    jina_api_key: str = ""
     github_token: str = ""
 
 

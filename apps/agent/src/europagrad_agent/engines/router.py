@@ -17,7 +17,7 @@ from europagrad_agent.engines.base import FetchEngine, FetchError, FetchResult
 from europagrad_agent.engines.quality import assess
 from europagrad_agent.storage.domain_stats import DomainStats, MemoryDomainStats
 
-ENGINE_ORDER = ("STATIC", "PLAYWRIGHT", "CRAWL4AI")
+ENGINE_ORDER = ("STATIC", "JINA", "PLAYWRIGHT", "CRAWL4AI")
 
 
 class AdaptiveRouter:
@@ -26,6 +26,7 @@ class AdaptiveRouter:
         static: FetchEngine,
         playwright: FetchEngine | None = None,
         crawl4ai: FetchEngine | None = None,
+        jina: FetchEngine | None = None,
         stats: DomainStats | None = None,
         use_memory_stats_fallback: bool = True,
     ) -> None:
@@ -34,6 +35,8 @@ class AdaptiveRouter:
             self._engines[playwright.name] = playwright
         if crawl4ai is not None:
             self._engines[crawl4ai.name] = crawl4ai
+        if jina is not None:
+            self._engines[jina.name] = jina
         self._stats = stats or (MemoryDomainStats() if use_memory_stats_fallback else None)
 
     async def fetch(self, url: str) -> FetchResult:
