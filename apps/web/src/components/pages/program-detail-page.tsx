@@ -9,12 +9,35 @@ import { DeadlineBadge, FundingBadge, MatchPill } from '@/components/status-badg
 import { ScoreRing } from '@/components/score-ring';
 import type { EvidenceEntry, ProgramRow } from '@/lib/types';
 import { toast } from 'sonner';
+import { createBrowserClient } from '@supabase/ssr';
+
+async function addToPlan(programId: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    toast.error('Storage not configured.');
+    return;
+  }
+  const supabase = createBrowserClient(url, key);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    toast.error('Sign in to save programmes to your plan.');
+    return;
+  }
+  const resp = await fetch('/api/plan/saved', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entityType: 'PROGRAM', entityId: programId }),
+  });
+  if (resp.ok) toast.success('Added to your plan board.');
+  else toast.error('Could not save — try again.');
+}
 
 function Field({ label, value }: { label: string; value: string }) { return <div className="border-b border-border py-3 last:border-b-0"><p className="data-label">{label}</p><p className="mt-1 text-sm font-semibold leading-6">{value}</p></div>; }
 
 export default function ProgramDetailPage({ program, evidence }: { program: ProgramRow; evidence: EvidenceEntry[] }) {
   return <div className="container soft-enter py-7 pb-14 lg:py-10"><Link href="/results" className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary"><ArrowLeft className="h-4 w-4" />Back to results</Link>
-    <header className="mt-5 overflow-hidden rounded-2xl border border-border bg-card"><div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[auto_1fr_auto] lg:items-center">{program.score != null ? <ScoreRing score={program.score} /> : <div className="grid h-24 w-24 place-items-center rounded-full border-2 border-dashed border-border text-center text-[10px] font-bold uppercase leading-4 text-muted-foreground">score<br />pending</div>}<div><div className="flex flex-wrap items-center gap-2"><FundingBadge funding={program.fundingClass} />{program.isJointProgram && <span className="rounded bg-violet-100 px-2 py-1 text-[11px] font-bold text-violet-800 dark:bg-violet-950 dark:text-violet-200">Joint programme</span>}</div><h1 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{program.program}</h1><p className="mt-1 text-base font-semibold text-muted-foreground">{program.university} · {program.city ? `${program.city}, ` : ''}{program.country}</p><div className="mt-4 flex flex-wrap gap-2"><DeadlineBadge status={program.deadlineStatus} days={program.daysRemaining} />{program.matchClass && <MatchPill match={program.matchClass} />}<span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-bold text-secondary-foreground">{program.durationMonths ? `${program.durationMonths} months` : 'Duration not specified'} · {program.language}</span></div></div><Button className="gap-2" onClick={() => toast.success('Added to the sample plan board')}><Plus className="h-4 w-4" />Add to plan</Button></div><div className="border-t border-border bg-secondary/35 px-5 py-3 text-xs text-muted-foreground sm:px-7">Evidence-cited record · requirement claims must be re-verified at their official source.</div></header>
+    <header className="mt-5 overflow-hidden rounded-2xl border border-border bg-card"><div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[auto_1fr_auto] lg:items-center">{program.score != null ? <ScoreRing score={program.score} /> : <div className="grid h-24 w-24 place-items-center rounded-full border-2 border-dashed border-border text-center text-[10px] font-bold uppercase leading-4 text-muted-foreground">score<br />pending</div>}<div><div className="flex flex-wrap items-center gap-2"><FundingBadge funding={program.fundingClass} />{program.isJointProgram && <span className="rounded bg-violet-100 px-2 py-1 text-[11px] font-bold text-violet-800 dark:bg-violet-950 dark:text-violet-200">Joint programme</span>}</div><h1 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">{program.program}</h1><p className="mt-1 text-base font-semibold text-muted-foreground">{program.university} · {program.city ? `${program.city}, ` : ''}{program.country}</p><div className="mt-4 flex flex-wrap gap-2"><DeadlineBadge status={program.deadlineStatus} days={program.daysRemaining} />{program.matchClass && <MatchPill match={program.matchClass} />}<span className="rounded-md bg-secondary px-2 py-1 text-[11px] font-bold text-secondary-foreground">{program.durationMonths ? `${program.durationMonths} months` : 'Duration not specified'} · {program.language}</span></div></div><Button className="gap-2" onClick={() => void addToPlan(program.id)}><Plus className="h-4 w-4" />Add to plan</Button></div><div className="border-t border-border bg-secondary/35 px-5 py-3 text-xs text-muted-foreground sm:px-7">Evidence-cited record · requirement claims must be re-verified at their official source.</div></header>
     {program.id === 'polimi-cs' && <div className="mt-5 flex gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/35 dark:text-amber-200"><ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" /><p><strong>Conflict to reconcile.</strong> This sample profile intentionally pairs a merit award with a general tuition figure. Treat scholarship coverage as conditional until the award call is confirmed.</p></div>}
     {program.id === 'tu-berlin-cs' && <div className="mt-5 flex gap-3 rounded-xl border border-sky-300 bg-sky-50 p-4 text-sm leading-6 text-sky-950 dark:border-sky-900 dark:bg-sky-950/35 dark:text-sky-200"><FileWarning className="mt-0.5 h-5 w-5 shrink-0" /><p><strong>Needs re-verification.</strong> The MOI indicator is sample-only; language-proof policies may change by intake and programme route.</p></div>}
     <Tabs defaultValue="academic" className="mt-7"><TabsList className="h-auto w-full justify-start overflow-x-auto rounded-xl border border-border bg-card p-1"><TabsTrigger value="academic">Academic</TabsTrigger><TabsTrigger value="funding">Funding</TabsTrigger><TabsTrigger value="language">Language</TabsTrigger><TabsTrigger value="deadlines">Deadlines</TabsTrigger><TabsTrigger value="work">Work</TabsTrigger><TabsTrigger value="links">Links</TabsTrigger></TabsList>
