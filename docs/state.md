@@ -31,7 +31,7 @@
 
 ## Current status
 
-- Tasks 1, 2, 3, 4, 5 complete. All 10 UI screens render on mock data (D11); database live on Supabase with full schema + RLS + seeded countries; taxonomy synced DB↔TS↔PY with automated drift check; auth live (magic link works, Google pending credentials).
+- Tasks 1-11 done, task 12 in verification. Repo LIVE: github.com/o9544091-lgtm/europagrad (secrets set: SUPABASE_URL, SUPABASE_SERVICE_KEY, DATABASE_URL). Keyless operation proven: heuristic extractor + DDG search = real runs work without API keys; quality auto-upgrades when OPENROUTER_API_KEY/TAVILY_API_KEY land. Recommended model: google/gemini-2.0-flash-001 (~cents per L1 run); free alt: deepseek/deepseek-chat-v3-0324:free. All prior completions (tasks 1-11) unchanged.
 - Auth facts: Email provider default-on; magic-link OTP accepted live (free-tier rate limit ~2 sends/hour — expected). Google button shows explanatory toast until OAuth client ID/secret are added in Dashboard → Authentication → Providers → Google. RLS verified at SQL level (11 tests) and API level (8 tests). Test scripts: `scripts/test-rls.mjs`, `apps/web/scripts/auth-e2e.mjs`.
 - Supabase connection facts (no secrets here — credentials live in gitignored env files only): project ref `zlcyhizyplmthbznjfny`, pooler region `aws-0-ap-southeast-1`. Env files populated: `apps/web/.env.local`, `apps/agent/.env`.
 - Tools: `scripts/apply-migration.mjs`, `scripts/check-taxonomy-drift.mjs`, `scripts/test-rls.mjs`, `apps/web/scripts/auth-e2e.mjs` (all read env via `node --env-file=apps/agent/.env`).
