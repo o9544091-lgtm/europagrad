@@ -31,13 +31,9 @@
 
 ## Current status
 
-- Tasks 1-11 done, task 12 in verification. Repo LIVE: github.com/o9544091-lgtm/europagrad (secrets set: SUPABASE_URL, SUPABASE_SERVICE_KEY, DATABASE_URL). Keyless operation proven: heuristic extractor + DDG search = real runs work without API keys; quality auto-upgrades when OPENROUTER_API_KEY/TAVILY_API_KEY land. Recommended model: google/gemini-2.0-flash-001 (~cents per L1 run); free alt: deepseek/deepseek-chat-v3-0324:free. All prior completions (tasks 1-11) unchanged.
-- Auth facts: Email provider default-on; magic-link OTP accepted live (free-tier rate limit ~2 sends/hour — expected). Google button shows explanatory toast until OAuth client ID/secret are added in Dashboard → Authentication → Providers → Google. RLS verified at SQL level (11 tests) and API level (8 tests). Test scripts: `scripts/test-rls.mjs`, `apps/web/scripts/auth-e2e.mjs`.
-- Supabase connection facts (no secrets here — credentials live in gitignored env files only): project ref `zlcyhizyplmthbznjfny`, pooler region `aws-0-ap-southeast-1`. Env files populated: `apps/web/.env.local`, `apps/agent/.env`.
-- Tools: `scripts/apply-migration.mjs`, `scripts/check-taxonomy-drift.mjs`, `scripts/test-rls.mjs`, `apps/web/scripts/auth-e2e.mjs` (all read env via `node --env-file=apps/agent/.env`).
-- Web validation green: lint, typecheck, tests, build. Agent: 5/5 pytest, ruff clean.
-- Toolchain installed: pnpm 9.15.0, uv 0.12.5.
-- Repo not yet git-initialized/pushed — when pushed, add `DATABASE_URL` as a GitHub Actions secret so the CI drift check activates.
+- Tasks 1-12, 14-25, 28, 31 done (task 12 dispatch verification + task 13 full seed pending user actions). The app is fully wired to live data: results, programme dossiers with evidence + change history, country packs, Erasmus register, comparison, report, shortlist + tracker, in-app research trigger, exports.
+- Verification: web lint/typecheck/24 unit tests/build green; agent 88/88 pytest, ruff clean; RLS 11 SQL + 8 API tests green.
+- Repo: github.com/o9544091-lgtm/europagrad. Keys in apps/agent/.env: Supabase, OpenCode Zen (hy3-free), Tavily. Jina optional.
 
 ## Next actions
 

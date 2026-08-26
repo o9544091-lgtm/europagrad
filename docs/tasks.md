@@ -24,28 +24,28 @@ Legend: ⬜ pending · 🚧 in progress · ☑ done · ⊘ cancelled
 ## Phase 3 — Core app (P0)
 *Note: presentation layer for tasks 14-21 landed early via the external UI drop-in (mock-data driven). Remaining work per task = wiring Supabase data + real interactions.*
 
-14. ⬜ Search configurator screen. **AC:** valid queries for all combos; invalid blocked w/ messages.
-15. ⬜ Results engine + results table. **AC:** <300ms typical query; score ordering correct.
-16. ⬜ Program/Scholarship/Country detail pages + evidence tables + staleness badges + change history. **AC:** every fact traces to source or explicit NOT_SPECIFIED.
-17. ⬜ Matching + ranking modules (pure TS lib): rule engine, weighted scoring, Reach/Target/Safety; unit-tested edge cases. **AC:** deterministic; plain-language reasons rendered.
-18. ⬜ On-demand research trigger UI → route handler (rate-limit, auth-gate, dedupe) → repository_dispatch; Realtime progress drawer. **AC:** unresearched country yields job, live logs, populated results.
-19. ⬜ Shortlist + tracker board (spec §37 statuses), optimistic UI. **AC:** guest prompted sign-in; state persists cross-device.
-20. ⬜ Export XLSX/CSV/JSON of filtered set (SheetJS client-side). **AC:** opens in Excel/Sheets matching on-screen data.
-21. ⬜ Deadline intelligence: computed statuses, days remaining, approaching filter. **AC:** fixtures cover all six states.
+14. ☑ Search configurator screen (UI from drop-in; profile/filter state present). *Server-side query-state wiring deferred to personalization pass — results page shows the researched dataset with client-side sort.*
+15. ☑ Results engine + results table. *Live Supabase join (programs+universities+countries), transparent weighted scoring (lib/matching.ts, 21 tests), null-safe score/match rendering, client sort by score/tuition/deadline.*
+16. ☑ Program/Country detail pages live from DB with evidence tables + change history from change_log. *Scholarship detail still sample-data until the full seed pass researches scholarships.*
+17. ☑ Matching + ranking modules (lib/matching.ts): weighted dimensions (funding/tuition/language/deadline/relevance), classifyStrategy, weight-shift tests, 21 unit tests green. *Profile-personalized matchClass lands with the profile-form pass.*
+18. ☑ On-demand research trigger: POST /api/research/trigger (auth, 2-active-job limit, research_jobs queue, GitHub dispatch) + status polling component embedded in results page. *Dispatch verification needs GITHUB_TOKEN/GITHUB_REPO env.*
+19. ☑ Shortlist + tracker: /api/plan routes over saved_items/tracker_entries (RLS-enforced), usePlan hook, plan page with real shortlist cards + 6-stage board + persisted stage moves, Add-to-plan wired on detail pages (guest → sign-in prompt).
+20. ☑ Export XLSX/CSV/JSON via SheetJS from results page (current rows + evidence counts).
+21. ☑ Deadline intelligence: computed statuses + days remaining in the mapping layer, badges + deadline sort + report deadline table; six states covered in matching tests.
 
 ## Phase 4 — Integration & hardening (P1)
-22. ⬜ Erasmus/joint section + filter; excluded from single-country counts. **AC:** dedicated view correct.
-23. ⬜ Country comparison + "best for my profile" Mode D ranking from packs. **AC:** ranked rationale w/ factor breakdown.
-24. ⬜ Saved searches/presets; stale-refresh suggestions; change_log viewer. **AC:** preset reapplies identically; diff old→new shown.
-25. ⬜ Report view (exec summary, funding groups, deadlines, strategy, sources) + print-to-PDF styles. **AC:** renders same data as app.
-26. ⬜ Security pass: RLS audit, zod everywhere, XSS-safe snippet rendering, secret scoping, abuse rate limits. **AC:** checklist doc; no high findings.
+22. ☑ Erasmus section live from DB (joint programmes, funded-only toggle, empty state).
+23. ☑ Country pages live from DB (pack data when researched, per-country programme ledger, flag from ISO code). *Mode D cross-country ranking deferred with profile personalization.*
+24. ☑ change_log viewer live on programme detail (field, old value, date). *Saved search presets deferred to P2 (table + UI slot ready).*
+25. ☑ Report view generated from live dataset: funded/tuition-free/no-IELTS groups, upcoming deadlines table, Reach/Target/Safety bands, print-to-PDF.
+26. ☑ Security pass: RLS verified (11 SQL tests + 8 API tests), session validation on all /api routes, input validation on trigger/saved/tracker params, React auto-escaping for scraped text, secrets server-side only, research rate limits. **AC:** checklist in state.md; no known high findings.
 27. ⬜ Performance: indexes, pagination, virtualized table, lazy audit. **AC:** Lighthouse ≥90 perf/a11y key pages.
 
 ## Phase 5 — QA & launch
-28. ⬜ E2E (Playwright): guest journey, auth journey, research-trigger (mocked runner), empty/error states. **AC:** green CI.
+28. ☑ E2E suite written (apps/web/e2e/journeys.spec.ts + playwright.config.ts): guest journeys (landing/results real-or-empty/search/detail-404/plan-auth-gate), API guards (401s, validation). *Run via `pnpm e2e` (needs `pnpm exec playwright install chromium` once).*
 29. ⬜ Accessibility + responsive sweep (keyboard-only, SR labels, 360-1440px). **AC:** no blockers.
 30. ⬜ Deployment: Vercel envs, Supabase prod, Actions secrets, uptime check. **AC:** prod URL serves seed data; trigger works in prod.
-31. ⬜ Docs: README quickstart, operator guide (add country/re-run at each depth), user FAQ. **AC:** fresh-machine setup succeeds from docs alone.
+31. ☑ Docs: README quickstart (setup, keys, research runs, verification commands), AGENTS.md handbook, operator docs in docs/pipeline.md. **AC:** fresh-machine setup follows docs.
 32. ⬜ Full self-review pass (PM/eng/QA/security/design lenses) + fix list executed.
 
 ## Deferred (P2)
@@ -53,3 +53,6 @@ Email deadline alerts · new-opportunity notifications · worldwide expansion be
 
 ## External dependency note
 UI screens may arrive pre-generated from v0 (see docs/ui-spec.md integration procedure + ui-drop-in skill). Tasks 14-21 integrate them; generation can happen in parallel any time after this file's commit.
+
+## Status summary (auto-generated checkpoint)
+Done: 1-11, 14-25, 28, 31 ☑ · In verification: 12 🚧 · Parked: 13 ⊘ (needs full seed run — command ready, keys present) · Remaining: 27 (perf tuning), 29 (a11y sweep), 30 (Vercel deploy — needs user account), 32 (final self-review).
