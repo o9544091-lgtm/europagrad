@@ -92,7 +92,11 @@ export async function fetchProgramRows(limit = 500): Promise<{
 
 export async function fetchProgramById(
   id: string,
-): Promise<{ program: ProgramRow; evidence: EvidenceEntry[] } | null> {
+): Promise<{
+  program: ProgramRow;
+  evidence: EvidenceEntry[];
+  changes: Array<{ field: string; oldValue: unknown; newValue: unknown; changedAt: string }>;
+} | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("programs")
@@ -102,8 +106,57 @@ export async function fetchProgramById(
   if (error) throw new Error(error.message);
   const row = data as unknown as JoinedRow | null;
   if (!row) return null;
+  const { data: changes } = await supabase
+    .from("change_log")
+    .select("field, old_value, new_value, changed_at")
+    .eq("entity_id", id)
+    .order("changed_at", { ascending: false })
+    .limit(20);
   return {
     program: mapDbProgram(row),
     evidence: mapDbEvidence(row.evidence),
+    changes: (changes ?? []).map((c) => ({
+      field: String(c.field ?? ""),
+      oldValue: c.old_value,
+      newValue: c.new_value,
+      changedAt: String(c.changed_at ?? ""),
+    })),
+  };
+}
+
+export interface CountryPageData {
+  country: {
+    id: string;
+    name: string;
+    pack: Record<string, unknown>;
+    researched: boolean;
+  } | null;
+  programs: ProgramRow[];
+}
+
+export async function fetchCountryPage(code: string): Promise<CountryPageData> {
+  const supabase = await createClient();
+  const { data: country } = await supabase
+    .from("countries")
+    .select("id, name, pack")
+    .eq("id", code.toUpperCase())
+    .maybeSingle();
+  const { data: programRows } = await supabase
+    .from("programs")
+    .select("*, universities!inner(name, website, countries(name))")
+    .eq("universities.country_id", code.toUpperCase())
+    .order("last_verified_at", { ascending: false, nullsFirst: false })
+    .limit(200);
+  const pack = (country?.pack ?? {}) as Record<string, unknown>;
+  return {
+    country: country
+      ? {
+          id: country.id,
+          name: country.name,
+          pack,
+          researched: Object.keys(pack).length > 0,
+        }
+      : null,
+    programs: ((programRows ?? []) as unknown as JoinedRow[]).map(mapDbProgram),
   };
 }

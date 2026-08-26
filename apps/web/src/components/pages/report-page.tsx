@@ -1,20 +1,84 @@
 "use client";
-/* Scholarly Ledger style: print-friendly executive report with evidence-grouped lists, explicit sample watermarking, and tiered source appendix. */
-import { FileDown, Printer, ShieldCheck } from 'lucide-react';
+/* EuropaGrad report: generated from the researched dataset with print-friendly layout. */
+import { useMemo } from 'react';
+import Link from 'next/link';
+import { Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DeadlineBadge, FundingBadge } from '@/components/status-badge';
-import { programs, reportGroups } from '@/lib/mock-data';
+import type { ProgramRow } from '@/lib/types';
 
-function groupItems(ids: string[]) { return ids.map((id) => programs.find((program) => program.id === id)).filter((program) => Boolean(program)); }
+function group(rows: ProgramRow[], predicate: (p: ProgramRow) => boolean) {
+  return rows.filter(predicate).slice(0, 8);
+}
 
-export default function ReportPage() {
-  const deadlines = [...programs].filter((program) => program.deadlineStatus === 'OPEN' || program.deadlineStatus === 'APPROACHING').sort((a, b) => (a.daysRemaining ?? 999) - (b.daysRemaining ?? 999)).slice(0, 7);
-  return <div className="container soft-enter py-8 pb-14 lg:py-10 print:py-0"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end print:hidden"><div><p className="data-label">Research output</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">Sample decision report.</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">A printable synthesis constructed solely from prototype data.</p></div><Button onClick={() => window.print()} className="gap-2"><Printer className="h-4 w-4" />Print report</Button></div>
-    <article className="relative mt-7 overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-9 print:mt-0 print:border-0 print:p-0 print:shadow-none"><div className="pointer-events-none absolute right-[-80px] top-[45%] -rotate-45 text-3xl font-extrabold uppercase tracking-[.2em] text-primary/[0.05] sm:text-6xl">Sample data</div><header className="border-b-2 border-primary pb-6"><div className="flex items-start justify-between gap-4"><div><p className="data-label">EuropaGrad</p><h2 className="mt-2 text-2xl font-extrabold tracking-tight">European funded Master’s — sample research report</h2><p className="mt-2 text-sm text-muted-foreground">Generated from sample data · 26 August 2026</p></div><ShieldCheck className="h-8 w-8 text-primary" /></div></header>
-      <section className="grid gap-5 border-b border-border py-7 sm:grid-cols-[auto_1fr]"><span className="grid h-14 w-14 place-items-center rounded-xl bg-primary font-mono text-lg font-black text-primary-foreground" aria-hidden="true">EG</span><div><p className="data-label">EF / source-stamped research output</p><h3 className="mt-1 text-lg font-extrabold">Executive summary</h3><p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">The prototype dataset contains {programs.length} sample programme records. High-match examples cluster around fully funded joint routes, tuition-free public-university routes, and scholarship-linked choices. These are not live recommendations; the next step is to re-verify current terms, eligibility, and deadlines on Tier 1 sources.</p></div></section>
-      <section className="grid gap-5 border-t border-border py-7 lg:grid-cols-2">{([{ title: 'Best fully funded', ids: reportGroups.funded }, { title: 'Tuition-free', ids: reportGroups.tuitionFree }, { title: 'Without IELTS signal', ids: reportGroups.noIelts }, { title: 'Accepting MOI signal', ids: reportGroups.moi }] as const).map((group) => <div key={group.title} className="rounded-xl border border-border p-4"><h3 className="font-extrabold">{group.title}</h3><div className="mt-3 space-y-3">{groupItems(group.ids).map((program) => program && <div key={program.id} className="flex items-start justify-between gap-4"><div><p className="text-sm font-bold">{program.university}</p><p className="mt-1 text-xs text-muted-foreground">{program.program}</p></div><FundingBadge funding={program.fundingClass} /></div>)}</div></div>)}</section>
-      <section className="border-t border-border py-7"><h3 className="text-lg font-extrabold">Upcoming sample deadlines</h3><div className="mt-4 overflow-x-auto rounded-xl border border-border"><table className="w-full min-w-[580px] text-left text-sm"><thead className="bg-secondary/40 text-[11px] font-bold uppercase tracking-[.1em] text-muted-foreground"><tr><th className="px-4 py-3">Programme</th><th className="px-4 py-3">Country</th><th className="px-4 py-3">Deadline</th><th className="px-4 py-3">State</th></tr></thead><tbody>{deadlines.map((program) => <tr key={program.id} className="ledger-row"><td className="px-4 py-3 font-bold">{program.program}<span className="block text-xs font-normal text-muted-foreground">{program.university}</span></td><td className="px-4 py-3">{program.country}</td><td className="px-4 py-3 tabular">{program.deadline}</td><td className="px-4 py-3"><DeadlineBadge status={program.deadlineStatus} days={program.daysRemaining} /></td></tr>)}</tbody></table></div></section>
-      <section className="border-t border-border py-7"><h3 className="text-lg font-extrabold">Reach / Target / Safety board</h3><div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-950 dark:bg-red-950/25"><p className="data-label">Reach</p><p className="mt-2 text-sm font-extrabold">Erasmus Mundus Big Data Management</p><p className="mt-2 text-xs leading-5 text-muted-foreground">High score and strong funding signal; competitive sample route.</p></div><div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-950 dark:bg-amber-950/25"><p className="data-label">Target</p><p className="mt-2 text-sm font-extrabold">TU Berlin Computer Science</p><p className="mt-2 text-xs leading-5 text-muted-foreground">Tuition-free sample path with a transparent language verification requirement.</p></div><div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-950 dark:bg-emerald-950/25"><p className="data-label">Safety</p><p className="mt-2 text-sm font-extrabold">University of Padua Data Science</p><p className="mt-2 text-xs leading-5 text-muted-foreground">Lower sample tuition and scholarship pointer, subject to eligibility evidence.</p></div></div></section>
-      <section className="border-t border-border pt-7"><h3 className="text-lg font-extrabold">Tiered sources appendix</h3><ol className="mt-4 space-y-3 text-sm leading-6"><li><strong>1. Tier 1 — Official providers.</strong> University, scholarship provider, and government source pages should govern the final decision.</li><li><strong>2. Tier 2 — Official portals.</strong> Use national application portals to trace programme-level listings, while checking their update time.</li><li><strong>3. Tier 3 — Community sources.</strong> Use only for orientation, then confirm the claim on a Tier 1 source.</li></ol></section>
-    </article></div>;
+export default function ReportPage({ rows }: { rows: ProgramRow[] }) {
+  const groups = useMemo(() => ({
+    funded: group(rows, (p) => ['FULLY_FUNDED', 'FULLY_FUNDED_STIPEND'].includes(p.fundingClass)),
+    tuitionFree: group(rows, (p) => ['TUITION_FREE', 'TUITION_WAIVER'].includes(p.fundingClass)),
+    noIelts: group(rows, (p) => p.ieltsOverall === null),
+    moi: group(rows, (p) => p.moiAccepted === true),
+    deadlines: [...rows]
+      .filter((p) => p.deadline && p.deadlineStatus !== 'CLOSED')
+      .sort((a, b) => (a.daysRemaining ?? 9999) - (b.daysRemaining ?? 9999))
+      .slice(0, 10),
+  }), [rows]);
+
+  const strategy = useMemo(() => ({
+    reach: rows.filter((p) => (p.score ?? 0) >= 70).slice(0, 6),
+    target: rows.filter((p) => (p.score ?? 0) >= 45 && (p.score ?? 0) < 70).slice(0, 6),
+    safety: rows.filter((p) => (p.score ?? 0) < 45).slice(0, 6),
+  }), [rows]);
+
+  return <div className="container soft-enter py-8 pb-20 print:py-4">
+    <div className="flex items-center justify-between print:hidden">
+      <p className="data-label">Research output</p>
+      <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}><Printer className="h-4 w-4" />Print / save PDF</Button>
+    </div>
+    <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Research report</h1>
+    <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+      Generated from {rows.length} researched programme records. Every claim traces to evidence entries
+      on each programme page — re-verify deadlines and eligibility at their official sources before applying.
+    </p>
+
+    <section className="mt-8 grid gap-5 sm:grid-cols-3">
+      {([['Best funded', groups.funded], ['Tuition-free routes', groups.tuitionFree], ['Without stated IELTS', groups.noIelts]] as const).map(([title, items]) => (
+        <div key={title} className="ledger-card p-5">
+          <p className="data-label">{title}</p>
+          {items.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">None in the current dataset.</p> : (
+            <ul className="mt-3 space-y-2">
+              {items.map((p) => <li key={p.id}><Link href={`/programs/${p.id}`} className="text-sm font-bold hover:text-primary">{p.program}</Link><p className="text-xs text-muted-foreground">{p.university} · {p.country}</p></li>)}
+            </ul>
+          )}
+        </div>
+      ))}
+    </section>
+
+    <section className="mt-8">
+      <p className="data-label">Upcoming deadlines (open or unpublished)</p>
+      <div className="mt-3 overflow-x-auto rounded-xl border border-border bg-card">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead className="bg-secondary/40 text-[11px] font-bold uppercase tracking-[0.11em] text-muted-foreground"><tr><th className="px-4 py-3">Programme</th><th className="px-4 py-3">Deadline</th><th className="px-4 py-3">Status</th></tr></thead>
+          <tbody>{groups.deadlines.length === 0 ? <tr><td className="px-4 py-4 text-muted-foreground" colSpan={3}>No open deadlines in the dataset.</td></tr> : groups.deadlines.map((p) => <tr key={p.id} className="ledger-row"><td className="px-4 py-3"><p className="font-bold">{p.program}</p><p className="text-xs text-muted-foreground">{p.university}</p></td><td className="px-4 py-3 tabular">{p.deadline ?? '—'}</td><td className="px-4 py-3"><DeadlineBadge status={p.deadlineStatus} days={p.daysRemaining} /></td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section className="mt-8 grid gap-5 lg:grid-cols-3">
+      {([['Reach', strategy.reach], ['Target', strategy.target], ['Safety / lower-risk', strategy.safety]] as const).map(([title, items]) => (
+        <div key={title} className="ledger-card p-5">
+          <p className="data-label">{title}</p>
+          {items.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">No programmes in this band yet.</p> : (
+            <ul className="mt-3 space-y-2">
+              {items.map((p) => <li key={p.id} className="text-sm"><Link href={`/programs/${p.id}`} className="font-bold hover:text-primary">{p.program}</Link><span className="ml-2 text-xs text-muted-foreground">{p.university}</span><div className="mt-1"><FundingBadge funding={p.fundingClass} /></div></li>)}
+            </ul>
+          )}
+        </div>
+      ))}
+    </section>
+
+    <p className="mt-10 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
+      Strategy bands are evidence-based groupings, never admission guarantees. MOI acceptance varies by
+      intake and department. Generated {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
+    </p>
+  </div>;
 }

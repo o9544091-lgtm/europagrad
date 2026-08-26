@@ -13,5 +13,5 @@ export default async function Page({
   const { id } = await params;
   const result = await fetchProgramById(id);
   if (!result) notFound();
-  return <ProgramDetailPage program={result.program} evidence={result.evidence} />;
+  return <ProgramDetailPage program={result.program} evidence={result.evidence} changes={result.changes} />;
 }
