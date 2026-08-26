@@ -14,6 +14,23 @@ CSE_HINTS = (
     "information", "cyber", "security", "it ", "informatics", "engineering", "ai",
 )
 
+CSE_TAG_SET = {
+    "cs", "ai", "ml", "data-science", "software-engineering", "cybersecurity",
+    "information-systems", "it", "robotics", "computer-engineering", "embedded",
+    "hci", "systems",
+}
+
+
+def is_cse_relevant(bundle: ExtractionBundle) -> bool:
+    """Hard relevance bar for storage (spec §42: program relevant to background).
+    A program must show CSE signal via field tags or its name — otherwise the
+    orchestrator skips it entirely (off-target programs never reach the DB)."""
+    program = bundle.program
+    if any(tag in CSE_TAG_SET for tag in program.field_tags):
+        return True
+    name = program.program_name.value.lower() if program.program_name else ""
+    return any(hint in name for hint in CSE_HINTS)
+
 DATE_PATTERNS = (r"\d{4}-\d{2}-\d{2}", r"\d{1,2}\s+\w+\s+\d{4}")
 
 

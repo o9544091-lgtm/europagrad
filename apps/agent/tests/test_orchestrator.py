@@ -177,6 +177,36 @@ class TestOrchestrator:
 
 
 class TestQC:
+    def test_non_cse_program_fails_relevance_gate(self) -> None:
+        from europagrad_agent.pipelines.qc import is_cse_relevant
+
+        bundle = ExtractionBundle(
+            program=ProgramExtraction(
+                source_url="https://test.edu/msc",
+                program_name=cited("MSc Medieval History", "MSc Medieval History"),
+                field_tags=["history"],
+            )
+        )
+        assert is_cse_relevant(bundle) is False
+
+    def test_cse_tag_passes_relevance_gate(self) -> None:
+        from europagrad_agent.pipelines.qc import is_cse_relevant
+
+        bundle = good_bundle()
+        assert is_cse_relevant(bundle) is True
+
+    def test_cse_name_passes_without_tags(self) -> None:
+        from europagrad_agent.pipelines.qc import is_cse_relevant
+
+        bundle = ExtractionBundle(
+            program=ProgramExtraction(
+                source_url="https://test.edu/msc",
+                program_name=cited("MSc Cybersecurity", "MSc Cybersecurity"),
+                field_tags=[],
+            )
+        )
+        assert is_cse_relevant(bundle) is True
+
     def test_non_cse_program_warns_but_passes(self) -> None:
         bundle = ExtractionBundle(
             program=ProgramExtraction(

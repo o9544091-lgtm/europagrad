@@ -24,6 +24,21 @@ ProgressCb = Callable[[str, int, int], Awaitable[None]]
 
 CANDIDATE_LIMIT_DEFAULT = 8
 
+TECH_NAME_HINTS = (
+    "politecnico", "polytechnic", "politècnic", "technology", "technische",
+    "technical", "informatica", "computer", "university", "universit",
+)
+
+
+def prioritize_technical(institutions: list[Institution]) -> list[Institution]:
+    """Sorts technical/CS-strong institutions first (stable, alphabetical within groups)."""
+
+    def rank(i: Institution) -> tuple[int, str]:
+        name = i.name.lower()
+        return (0 if any(h in name for h in TECH_NAME_HINTS) else 1, name)
+
+    return sorted(institutions, key=rank)
+
 
 class InventoryLoader(Protocol):
     async def load_country(self, iso2: str) -> list[Institution]: ...
@@ -91,7 +106,7 @@ class ResearchOrchestrator:
             institutions.extend(await self._inventory.load_country(cc))
         if university_limit is not None:
             with_domain = [i for i in institutions if i.domain]
-            institutions = with_domain[:university_limit]
+            institutions = prioritize_technical(with_domain)[:university_limit]
         summary.universities = len(institutions)
         await self._report("inventory", len(institutions), len(institutions))
 
@@ -128,12 +143,15 @@ class ResearchOrchestrator:
                     continue
                 extracted += 1
 
-                from europagrad_agent.pipelines.qc import check_program
+                from europagrad_agent.pipelines.qc import check_program, is_cse_relevant
 
                 report = check_program(bundle, institution)
                 summary.qc_warnings += len(report.warnings)
                 if not report.passed:
                     summary.qc_errors += len(report.errors)
+                    continue
+                if not is_cse_relevant(bundle):
+                    summary.notes.append(f"skipped (not CSE-relevant): {bundle.program.program_name.value[:60] if bundle.program.program_name else url}")
                     continue
                 if write:
                     outcome = await self._store.upsert_program(university_id, bundle)
