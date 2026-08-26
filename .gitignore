@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.uv-cache/
+.pytest_cache/
+.ruff_cache/
+
+# env & secrets
+.env
+.env.local
+.env*.local
+apps/agent/.env
+
+# editors/os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# test/e2e artifacts
+playwright-report/
+test-results/
+
+# logs
+*.log
+npm-debug.log*

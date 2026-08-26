@@ -1,0 +1,72 @@
+name: Research run
+
+on:
+  workflow_dispatch:
+    inputs:
+      countries:
+        description: "Comma-separated ISO codes (e.g. IT,DE)"
+        required: true
+        default: "IT"
+      depth:
+        description: "Depth level"
+        type: choice
+        options: [L1, L2, L3]
+        default: L2
+      dry_run:
+        description: "Plan only, no crawl/writes"
+        type: boolean
+        default: true
+      extractor:
+        description: "Extraction path (auto = LLM if key present, else heuristic)"
+        type: choice
+        options: [auto, llm, heuristic]
+        default: auto
+      limit:
+        description: "Cap universities (empty = all)"
+        required: false
+        default: ""
+  repository_dispatch:
+    types: [research-request]
+
+concurrency:
+  group: research-${{ github.event.inputs.countries || github.event.client_payload.countries }}
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+      RESEARCH_COUNTRIES: ${{ inputs.countries || github.event.client_payload.countries }}
+      RESEARCH_DEPTH: ${{ inputs.depth || github.event.client_payload.depth || 'L2' }}
+      RESEARCH_DRY_RUN: ${{ inputs.dry_run || github.event.client_payload.dry_run || 'true' }}
+      EXTRACTOR: ${{ inputs.extractor || github.event.client_payload.extractor || 'auto' }}
+      LIMIT: ${{ inputs.limit || github.event.client_payload.limit || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: uv sync
+        working-directory: apps/agent
+      - name: Execute research run
+        working-directory: apps/agent
+        run: |
+          ARGS="--countries $RESEARCH_COUNTRIES --depth $RESEARCH_DEPTH"
+          if [ -n "$EXTRACTOR" ] && [ "$EXTRACTOR" != "null" ]; then
+            ARGS="$ARGS --extractor $EXTRACTOR"
+          fi
+          if [ -n "$LIMIT" ] && [ "$LIMIT" != "null" ] && [ "$LIMIT" != "" ]; then
+            ARGS="$ARGS --limit $LIMIT"
+          fi
+          if [ "$RESEARCH_DRY_RUN" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          echo "uv run agent run $ARGS"
+          uv run agent run $ARGS
